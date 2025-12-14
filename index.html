@@ -1,255 +1,206 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Methane Molecule (CH4) – 3D Model</title>
+// ** Three.js Initialization **
 
-<style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #f0f0f0;
-        font-family: Arial, sans-serif;
-    }
+// Standard Setup
+let scene, camera, renderer, controls, methaneGroup;
 
-    canvas {
-        display: block;
-    }
+function init() {
+    // 1. Scene Setup
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000); // Black background for realism
 
-    .controls {
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 10px 20px;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 8px;
-        color: #333;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        text-align: center;
-        font-size: 14px;
-    }
+    // 2. Camera Setup
+    // FOV, Aspect Ratio, Near Clipping, Far Clipping
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5; // Move camera back to see the object
 
-    .controls strong {
-        color: #880000;
-    }
-</style>
-</head>
+    // 3. Renderer Setup
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; // IMPORTANT: Enable shadow mapping
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+    document.body.appendChild(renderer.domElement);
 
-<body>
+    // 4. Orbit Controls (Mouse Controls)
+    // This allows the user to rotate the camera around the scene center (0,0,0)
+    // which effectively rotates the molecule since it is centered there.
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Smoother controls
+    controls.dampingFactor = 0.05;
 
-<div class="controls">
-    <p>
-        Methane Molecule (CH<sub>4</sub>) –
-        <strong>Rotating Model</strong>
-    </p>
-    <p>
-        Use <strong>Click and Drag</strong> to rotate the molecule.
-    </p>
-</div>
-
-<script type="module">
-/* ---------------- THREE.JS IMPORTS ---------------- */
-
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@r134/build/three.module.js';
-import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@r134/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@r134/examples/jsm/geometries/TextGeometry.js';
-
-/* ---------------- SCENE SETUP ---------------- */
-
-const scene = new THREE.Scene();
-
-const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-);
-
-camera.position.set(0, 2, 5);
-camera.lookAt(0, 0, 0);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
-
-/* ---------------- CONSTANTS ---------------- */
-
-const CARBON_COLOR = 0xcc0000;
-const HYDROGEN_COLOR = 0x0040ff;
-const BOND_COLOR = 0xffffff;
-const PLANE_COLOR = 0x00aa00;
-
-const RADIUS_C = 0.6;
-const RADIUS_H = 0.3;
-const BOND_LENGTH = 2.0;
-const BOND_THICKNESS = 0.1;
-
-/* ---------------- LIGHTING ---------------- */
-
-scene.add(new THREE.AmbientLight(0x404040, 1.5));
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-directionalLight.position.set(10, 15, 10);
-directionalLight.castShadow = true;
-scene.add(directionalLight);
-
-/* ---------------- GROUND PLANE ---------------- */
-
-const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 30),
-    new THREE.MeshPhongMaterial({ color: PLANE_COLOR, side: THREE.DoubleSide })
-);
-
-plane.rotation.x = -Math.PI / 2;
-plane.position.y = -0.8;
-plane.receiveShadow = true;
-scene.add(plane);
-
-/* ---------------- METHANE GROUP ---------------- */
-
-const methaneGroup = new THREE.Group();
-scene.add(methaneGroup);
-
-/* Carbon Atom */
-
-const carbon = new THREE.Mesh(
-    new THREE.SphereGeometry(RADIUS_C, 32, 32),
-    new THREE.MeshPhongMaterial({ color: CARBON_COLOR })
-);
-
-carbon.castShadow = true;
-methaneGroup.add(carbon);
-
-/* Hydrogen Atoms Positions */
-
-const positions = [
-    new THREE.Vector3(1, 1, 1),
-    new THREE.Vector3(-1, -1, 1),
-    new THREE.Vector3(-1, 1, -1),
-    new THREE.Vector3(1, -1, -1)
-];
-
-/* Create Hydrogens and Bonds */
-
-positions.forEach(vector => {
-
-    const direction = vector.normalize().multiplyScalar(BOND_LENGTH);
-
-    const hydrogen = new THREE.Mesh(
-        new THREE.SphereGeometry(RADIUS_H, 32, 32),
-        new THREE.MeshPhongMaterial({ color: HYDROGEN_COLOR })
-    );
-
-    hydrogen.position.copy(direction);
-    hydrogen.castShadow = true;
-    methaneGroup.add(hydrogen);
-
-    const bondLength = direction.length() - RADIUS_C - RADIUS_H;
-
-    const bond = new THREE.Mesh(
-        new THREE.CylinderGeometry(BOND_THICKNESS, BOND_THICKNESS, bondLength, 8),
-        new THREE.MeshPhongMaterial({ color: BOND_COLOR })
-    );
-
-    bond.position.copy(direction.clone().multiplyScalar(0.5));
-    bond.castShadow = true;
-
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        direction.clone().normalize()
-    );
-
-    bond.setRotationFromQuaternion(quaternion);
-    methaneGroup.add(bond);
-});
-
-/* ---------------- TEXT LABEL ---------------- */
-
-const loader = new FontLoader();
-
-loader.load(
-    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
-    font => {
-
-        const textMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
-
-        const ch = new THREE.Mesh(
-            new TextGeometry('CH', {
-                font: font,
-                size: 0.8,
-                height: 0.1
-            }),
-            textMaterial
-        );
-
-        const sub4 = new THREE.Mesh(
-            new TextGeometry('4', {
-                font: font,
-                size: 0.4,
-                height: 0.05
-            }),
-            textMaterial
-        );
-
-        sub4.position.set(1.1, -0.3, 0);
-
-        const labelGroup = new THREE.Group();
-        labelGroup.add(ch);
-        labelGroup.add(sub4);
-
-        labelGroup.position.set(-1, -0.7, 0);
-        labelGroup.rotation.x = -0.3;
-
-        methaneGroup.add(labelGroup);
-        animate();
-    }
-);
-
-/* ---------------- INTERACTION ---------------- */
-
-let isDragging = false;
-let prevX = 0;
-let prevY = 0;
-
-renderer.domElement.addEventListener('mousedown', e => {
-    isDragging = true;
-    prevX = e.clientX;
-    prevY = e.clientY;
-});
-
-renderer.domElement.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-
-    methaneGroup.rotation.y += (e.clientX - prevX) * 0.01;
-    methaneGroup.rotation.x += (e.clientY - prevY) * 0.01;
-
-    prevX = e.clientX;
-    prevY = e.clientY;
-});
-
-window.addEventListener('mouseup', () => isDragging = false);
-
-/* ---------------- ANIMATION LOOP ---------------- */
-
-function animate() {
-    requestAnimationFrame(animate);
-    if (!isDragging) methaneGroup.rotation.y += 0.005;
-    renderer.render(scene, camera);
+    // 5. Create the Methane Molecule and Ground
+    methaneGroup = new THREE.Group(); // All molecule components go into this group
+    scene.add(methaneGroup);
+    
+    createMethaneMolecule();
+    createGroundPlane();
+    setupLighting();
+    
+    // Handle window resizing
+    window.addEventListener('resize', onWindowResize, false);
 }
 
-/* ---------------- RESIZE ---------------- */
-
-window.addEventListener('resize', () => {
+function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
+}
 
-</body>
-</html>
+// ** Methane Molecule Construction **
+
+function createMethaneMolecule() {
+    // Define sizes and C-H bond length (L)
+    const carbonRadius = 0.5;
+    const hydrogenRadius = 0.3;
+    const bondRadius = 0.08;
+    const L = 1.5; // C-H bond length (distance from center to H atom)
+
+    // --- 5.1. Carbon Atom (Center) ---
+    const carbonGeometry = new THREE.SphereGeometry(carbonRadius, 32, 32);
+    // Use Lambert material for diffuse reflection
+    const carbonMaterial = new THREE.MeshLambertMaterial({ color: 0xaa0000 }); // Red tone
+    const carbon = new THREE.Mesh(carbonGeometry, carbonMaterial);
+    carbon.castShadow = true; // Carbon atom casts shadow
+    methaneGroup.add(carbon);
+
+    // --- 5.2. Hydrogen Atoms and Bonds (Tetrahedral Positioning) ---
+    // The four vertices of a tetrahedron that are equidistant from the origin.
+    // Coordinates are normalized for cleaner bond length L.
+    const H_positions = [
+        new THREE.Vector3(L, L, L).normalize().multiplyScalar(L),
+        new THREE.Vector3(-L, -L, L).normalize().multiplyScalar(L),
+        new THREE.Vector3(-L, L, -L).normalize().multiplyScalar(L),
+        new THREE.Vector3(L, -L, -L).normalize().multiplyScalar(L)
+    ];
+
+    const hydrogenMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Blue tone
+    const bondMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xffffff, // White diffuse
+        emissive: 0x444444 // Light gray emissive component
+    });
+
+    // Iterate through the four tetrahedral positions
+    H_positions.forEach(position => {
+        // Create Hydrogen Atom
+        const hydrogen = new THREE.Mesh(
+            new THREE.SphereGeometry(hydrogenRadius, 32, 32), 
+            hydrogenMaterial
+        );
+        hydrogen.position.copy(position); // Set position
+        hydrogen.castShadow = true;
+        methaneGroup.add(hydrogen);
+
+        // Create Bond (Cylinder)
+        const bond = createCylinderBond(
+            new THREE.Vector3(0, 0, 0), // Start at Carbon center
+            position, // End at Hydrogen center
+            bondRadius,
+            bondMaterial
+        );
+        bond.castShadow = true;
+        methaneGroup.add(bond);
+    });
+}
+
+/**
+ * Creates a cylinder mesh positioned and rotated to connect two points.
+ * @param {THREE.Vector3} point1 - Start point (Carbon center)
+ * @param {THREE.Vector3} point2 - End point (Hydrogen center)
+ * @param {number} radius - Radius of the cylinder
+ * @param {THREE.Material} material - Cylinder material
+ * @returns {THREE.Mesh} The cylinder mesh
+ */
+function createCylinderBond(point1, point2, radius, material) {
+    // 1. Calculate the distance (length) and midpoint of the cylinder
+    const direction = new THREE.Vector3().subVectors(point2, point1);
+    const length = direction.length();
+    const midpoint = new THREE.Vector3().addVectors(point1, point2).divideScalar(2);
+
+    // 2. Create the cylinder geometry
+    const bondGeometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+    const bond = new THREE.Mesh(bondGeometry, material);
+
+    // 3. Set position to the midpoint
+    bond.position.copy(midpoint);
+
+    // 4. Set rotation to align the cylinder's height (Y-axis) with the direction vector
+    bond.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0), // Default cylinder axis
+        direction.normalize() // Target axis
+    );
+    
+    // The cylinder is now aligned perpendicular to the sphere's surface and centered
+    return bond;
+}
+
+// ** Ground Plane **
+
+function createGroundPlane() {
+    // Dimensions and Material
+    const planeSize = 10;
+    const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+    // Green colored plane object
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x006400 }); // Dark green
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+    // Position the plane below the molecule
+    plane.rotation.x = -Math.PI / 2; // Rotate to lie flat (XZ plane)
+    plane.position.y = -2; // Below the molecule
+    plane.receiveShadow = true; // IMPORTANT: Plane receives shadows
+    
+    // Ensure only the molecule moves, not the plane
+    // The plane is added directly to the scene, not the rotation group (methaneGroup).
+    scene.add(plane);
+}
+
+// ** Lighting Setup **
+
+function setupLighting() {
+    // Ambient Light: Soft, overall illumination
+    const ambientLight = new THREE.AmbientLight(0x404040, 3); // Soft white light
+    scene.add(ambientLight);
+
+    // Directional Light: For sharp shadows and primary lighting
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(5, 10, 7.5); // Position above and to the side
+    directionalLight.castShadow = true; // Light casts shadows
+
+    // Configure shadow map properties for better shadows
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
+    // Set frustum bounds for the shadow camera
+    const d = 5;
+    directionalLight.shadow.camera.left = -d;
+    directionalLight.shadow.camera.right = d;
+    directionalLight.shadow.camera.top = d;
+    directionalLight.shadow.camera.bottom = -d;
+    directionalLight.shadow.camera.near = 0.1;
+    directionalLight.shadow.camera.far = 50;
+
+    scene.add(directionalLight);
+    
+    // Optional: Helper to visualize the light's shadow camera frustum
+    // const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
+    // scene.add(helper);
+}
+
+// ** Animation Loop **
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    // 1. Continuous Animation
+    // Apply a small, continuous rotation to the entire methane molecule group
+    // The plane remains stationary because it's not in this group.
+    methaneGroup.rotation.x += 0.005;
+    methaneGroup.rotation.y += 0.005;
+
+    // 2. Mouse Controls (Handled by OrbitControls)
+    controls.update(); // Must be called if controls.enableDamping or controls.autoRotate are set
+
+    // Render the scene
+    renderer.render(scene, camera);
+}
+
+// ** Run the Program **
+init();
+animate();
