@@ -42,15 +42,15 @@
 <!-- Use type="module" for reliable loading of Three.js and its extensions -->
 <script type="module">
     // --- IMPORT THREE.JS LIBRARIES ---
-    // The previous error "Failed to resolve module specifier 'three'" occurs when the environment 
-    // cannot resolve bare module names. We will explicitly use the full CDN URL for all imports.
-    // NOTE: Using a specific, reliable CDN version (e.g., r128 or 0.165.0) for JSM modules is necessary.
-    const THREE_BASE_URL = 'https://cdn.jsdelivr.net/npm/three@0.165.0/';
-
-    import * as THREE from `${THREE_BASE_URL}build/three.module.js`;
+    // The previous error related to module specifiers persists.
+    // We are changing the CDN version from 0.165.0 to a widely compatible version (r134)
+    // for all module imports to try and resolve the environment's module lookup issue.
+    
+    // NOTE: We are using the 'jsm' folder structure even with r134 which is standard for modern Three.js modules.
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@r134/build/three.module.js';
     // Import extensions for 3D Text geometry
-    import { FontLoader } from `${THREE_BASE_URL}examples/jsm/loaders/FontLoader.js`;
-    import { TextGeometry } from `${THREE_BASE_URL}examples/jsm/geometries/TextGeometry.js`;
+    import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@r134/examples/jsm/loaders/FontLoader.js';
+    import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@r134/examples/jsm/geometries/TextGeometry.js';
     
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
